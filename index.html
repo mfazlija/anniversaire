@@ -17,7 +17,7 @@
                             200: '#fde68a',
                             300: '#fcd34d',
                             400: '#fbbf24',
-                            500: '#f59e0b',
+                            50: '#f59e0b',
                             600: '#d97706',
                             700: '#b45309',
                             800: '#92400e',
@@ -95,18 +95,15 @@
 
     <!-- Hero Section -->
     <header class="relative pt-28 pb-16 px-4 sm:px-6 overflow-hidden">
-        <!-- Fond décoratif dégradé -->
         <div class="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 sm:w-[500px] h-96 bg-amber-600/15 rounded-full blur-[110px] pointer-events-none"></div>
         <div class="absolute top-1/3 right-10 w-72 h-72 bg-orange-600/10 rounded-full blur-[90px] pointer-events-none"></div>
 
         <div class="max-w-3xl mx-auto text-center relative z-10">
-            <!-- Badge date -->
             <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs sm:text-sm font-medium mb-6 animate-float">
                 <span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
                 <span>Samedi 14 Novembre • Dès 13h00</span>
             </div>
 
-            <!-- Titre principal -->
             <h1 class="text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight mb-4 font-serif-title glow-text text-white">
                 On fête ça ! 🎂
             </h1>
@@ -115,7 +112,6 @@
                 Pour une fois, on inverse les codes : on se pose <span class="text-amber-400 font-semibold underline decoration-amber-500/50 underline-offset-4">dès le midi</span> et on laisse la journée déraper au feeling !
             </p>
 
-            <!-- Actions Rapides Hero -->
             <div class="flex flex-wrap items-center justify-center gap-3.5 mb-12">
                 <a href="#rsvp" class="w-full sm:w-auto px-7 py-3.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-bold shadow-xl shadow-amber-500/25 transition-all transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
@@ -262,7 +258,7 @@
                 <span class="text-amber-400 text-xs font-bold uppercase tracking-widest">Confirmer ma présence</span>
                 <h2 class="text-3xl font-extrabold text-white mt-1">Tu viens trinquer ? 🍻</h2>
                 <p class="text-stone-300 text-sm mt-2">
-                    Dis-moi simplement si tu es là pour le repas du midi (indispensable pour que je bloque la table aux Brasseurs !).
+                    Dis-moi simplement si tu es là pour le repas du midi (indispensable pour bloquer la table aux Brasseurs !).
                 </p>
             </div>
 
@@ -326,7 +322,7 @@
                     <label for="guestNotes" class="block text-xs font-bold uppercase tracking-wider text-amber-300 mb-2">
                         Un petit message ou une remarque ? (optionnel)
                     </label>
-                    <textarea id="guestNotes" rows="2" placeholder="Régime alimentaire, préférence de bière ou vanne..." class="w-full bg-black/60 border border-stone-700 rounded-xl px-4 py-2.5 text-white placeholder-stone-500 focus:outline-none focus:border-amber-400 text-sm resize-none"></textarea>
+                    <textarea id="guestNotes" rows="2" placeholder="Régime alimentaire, préférence de bière, vanne... (transmis en privé)" class="w-full bg-black/60 border border-stone-700 rounded-xl px-4 py-2.5 text-white placeholder-stone-500 focus:outline-none focus:border-amber-400 text-sm resize-none"></textarea>
                 </div>
 
                 <!-- Bouton d'action -->
@@ -334,10 +330,6 @@
                     <span>Valider ma présence</span>
                     <span class="text-lg">🎉</span>
                 </button>
-
-                <p class="text-center text-xs text-stone-400 mt-3">
-                    Ton inscription sera enregistrée et apparaîtra dans la liste des invités ci-dessous !
-                </p>
             </form>
         </div>
     </section>
@@ -367,7 +359,7 @@
                 </div>
             </div>
 
-            <!-- Liste des inscrits -->
+            <!-- Liste des inscrits (SANS les remarques privées) -->
             <div id="guestsContainer" class="space-y-3">
                 <div class="text-center py-8 text-stone-500 text-sm italic">
                     Chargement des confirmations...
@@ -376,45 +368,25 @@
         </div>
     </section>
 
-    <!-- Modal de confirmation & Choix d'envoi -->
+    <!-- Modal de confirmation simplifiée (Sans WhatsApp/SMS) -->
     <div id="confirmationModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md hidden opacity-0 transition-opacity duration-300">
-        <div class="glass-card bg-[#1E1917] border border-amber-500/40 rounded-2xl max-w-md w-full p-6 text-center transform scale-95 transition-transform duration-300 shadow-2xl" id="modalBox">
+        <div class="glass-card bg-[#1E1917] border border-amber-500/40 rounded-2xl max-w-md w-full p-6 sm:p-8 text-center transform scale-95 transition-transform duration-300 shadow-2xl" id="modalBox">
             <div class="w-16 h-16 bg-amber-500/20 text-amber-400 rounded-2xl flex items-center justify-center mx-auto text-3xl mb-4">
                 🎉
             </div>
             
-            <h3 class="text-xl font-bold text-white mb-2">Merci beaucoup <span id="modalName"></span> !</h3>
-            <p class="text-stone-300 text-sm mb-5 leading-relaxed">
-                Ta réponse a bien été enregistrée. Pour être 100% sûr que je réserve ta place, transmets-la moi directement :
+            <h3 class="text-2xl font-bold text-white mb-2">C'est tout bon, <span id="modalName"></span> !</h3>
+            
+            <p class="text-stone-300 text-sm leading-relaxed mb-4">
+                Ta présence a bien été enregistrée dans la liste. J'ai toutes les informations nécessaires pour la réservation aux Brasseurs !
             </p>
 
-            <!-- Aperçu du message formaté -->
-            <div class="bg-black/50 p-3.5 rounded-xl border border-stone-800 text-left text-xs font-mono text-amber-200/90 mb-5 max-h-32 overflow-y-auto" id="previewText">
-                <!-- Texte dynamique injecté ici -->
+            <div class="bg-black/50 p-4 rounded-xl border border-stone-800 text-amber-300/90 text-sm mb-6" id="modalSummary">
+                <!-- Résumé injecté dynamiquement -->
             </div>
 
-            <!-- Actions d'envoi rapide -->
-            <div class="flex flex-col gap-2.5">
-                <!-- WhatsApp -->
-                <a id="whatsappBtn" href="#" target="_blank" class="w-full py-3 rounded-xl bg-[#25D366] hover:bg-[#20ba59] text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg transition-transform active:scale-95">
-                    <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.299.144.347.491 1.2.534 1.288.043.087.072.188.014.303-.058.116-.087.188-.173.289l-.26.302c-.087.087-.179.182-.077.357.101.174.453.747.971 1.209.667.593 1.23.777 1.403.864.173.087.275.072.376-.043.101-.116.433-.505.549-.679.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.043.073.043.419-.101.824z"/></svg>
-                    <span>Envoyer sur WhatsApp</span>
-                </a>
-
-                <!-- SMS -->
-                <a id="smsBtn" href="#" class="w-full py-3 rounded-xl bg-stone-700 hover:bg-stone-600 text-white font-semibold text-sm flex items-center justify-center gap-2 transition-transform active:scale-95">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
-                    <span>Envoyer par SMS</span>
-                </a>
-
-                <!-- Copier dans le presse-papier -->
-                <button onclick="copyMessageToClipboard()" id="copyBtn" class="w-full py-2.5 rounded-xl border border-stone-700 hover:border-stone-500 text-stone-300 text-xs font-medium transition-colors">
-                    Copier le texte
-                </button>
-            </div>
-
-            <button onclick="closeModal()" class="mt-4 text-xs text-stone-500 hover:text-stone-300 underline">
-                Fermer
+            <button onclick="closeModal()" class="w-full py-3.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-extrabold text-sm transition-all shadow-lg shadow-amber-500/20">
+                Parfait, merci !
             </button>
         </div>
     </div>
@@ -457,7 +429,6 @@
     <script>
         const CONFIG = {
             targetDate: "2026-11-14T13:00:00+01:00",
-            hostPhone: "41787118394",
             eventName: "Anniversaire 14 Novembre",
             supabaseUrl: "https://eibscuxcvsnvhfkvbajp.supabase.co",
             supabaseAnonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpYnNjdXhjdnNudmhma3ZiYWpwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE2MDA5NDgsImV4cCI6MjEwNzE3Njk0OH0.sOiNM9z_M9E4-lCmCJ9b5BKygY9d3M8Jg8zKE3pCuAs"
@@ -472,8 +443,6 @@
         } catch (e) {
             console.error("Erreur init Supabase:", e);
         }
-
-        let currentFormattedMessage = "";
 
         // Compte à rebours
         function updateCountdown() {
@@ -598,6 +567,7 @@
                 return;
             }
 
+            // Affichage public : Noms et badges uniquement (notes volontairement masquées)
             container.innerHTML = guests.map(guest => {
                 let badge = '';
                 let borderClass = 'border-stone-800';
@@ -622,7 +592,6 @@
                                 <h4 class="font-bold text-white text-base">${escapeHtml(guest.name)}</h4>
                                 ${badge}
                             </div>
-                            ${guest.notes ? `<p class="text-stone-300 text-xs mt-1.5 italic bg-black/30 p-2 rounded-lg border border-stone-800/80">« ${escapeHtml(guest.notes)} »</p>` : ''}
                         </div>
                         <button onclick="window.deleteRsvpEntry('${guest.id}')" title="Retirer cette entrée" class="text-stone-500 hover:text-red-400 transition-colors p-1.5 self-end sm:self-center text-xs flex items-center gap-1">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
@@ -679,33 +648,25 @@
             submitBtn.disabled = false;
             submitBtn.innerHTML = originalBtnHtml;
 
-            // Préparation des messages de secours
-            let presenceText = "";
+            // Réinitialisation des champs du formulaire
+            document.getElementById("rsvpForm").reset();
+
+            // Résumé pour la modale
+            let summaryText = "";
             if (presenceValue === "lunch") {
-                presenceText = `🍽️ Oui, présent pour le repas à 13h aux Brasseurs (${guestCount} pers.) et pour la suite !`;
+                summaryText = `🍽️ Repas à 13h aux Brasseurs (${guestCount} place${guestCount > 1 ? 's' : ''}) et la suite selon l'ambiance !`;
             } else if (presenceValue === "later") {
-                presenceText = `🍻 Pas dispo à 13h pour manger, mais je vous rejoins plus tard (${guestCount} pers.) !`;
+                summaryText = `🍻 Tu rejoins le groupe plus tard dans la journée (${guestCount} personne${guestCount > 1 ? 's' : ''}) !`;
             } else {
-                presenceText = `😢 Malheureusement pas disponible pour ton anniversaire.`;
+                summaryText = `😢 Noté que tu ne peux malheureusement pas te joindre à nous.`;
             }
 
-            let message = `Hello ! C'est ${name}.\nPour ton anniversaire le 14 novembre :\n👉 ${presenceText}`;
-            if (notes) {
-                message += `\n💬 Note : "${notes}"`;
-            }
-
-            currentFormattedMessage = message;
-
-            // Modale
+            // Mise à jour de la modale
             document.getElementById("modalName").innerText = name;
-            document.getElementById("previewText").innerText = message;
-
-            const encodedMsg = encodeURIComponent(message);
-            document.getElementById("whatsappBtn").href = `https://wa.me/${CONFIG.hostPhone}?text=${encodedMsg}`;
-            document.getElementById("smsBtn").href = `sms:${CONFIG.hostPhone}?&body=${encodedMsg}`;
+            document.getElementById("modalSummary").innerText = summaryText;
 
             // Confettis
-            if (typeof confetti === 'function') {
+            if (typeof confetti === 'function' && presenceValue !== 'cannot') {
                 confetti({
                     particleCount: 100,
                     spread: 70,
@@ -748,21 +709,6 @@
             setTimeout(() => {
                 modal.classList.add("hidden");
             }, 300);
-        };
-
-        window.copyMessageToClipboard = function() {
-            if (!currentFormattedMessage) return;
-            navigator.clipboard.writeText(currentFormattedMessage).then(() => {
-                const btn = document.getElementById("copyBtn");
-                btn.innerText = "✓ Message copié dans le presse-papier !";
-                btn.classList.add("text-amber-400", "border-amber-400");
-                setTimeout(() => {
-                    btn.innerText = "Copier le texte";
-                    btn.classList.remove("text-amber-400", "border-amber-400");
-                }, 2500);
-            }).catch(err => {
-                console.error("Échec copie:", err);
-            });
         };
 
         window.downloadCalendarEvent = function() {
