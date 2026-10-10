@@ -306,7 +306,7 @@
                 </div>
 
                 <!-- Nombre d'accompagnants -->
-                <div id="plusOneContainer" class="mb-5">
+                <div id="plusOneContainer" class="mb-6">
                     <label for="guestCount" class="block text-xs font-bold uppercase tracking-wider text-amber-300 mb-2">
                         Viens-tu accompagné·e ?
                     </label>
@@ -315,14 +315,6 @@
                         <option value="2">On vient à 2 (+1 personne)</option>
                         <option value="3">On vient à 3 (+2 personnes)</option>
                     </select>
-                </div>
-
-                <!-- Petit mot -->
-                <div class="mb-6">
-                    <label for="guestNotes" class="block text-xs font-bold uppercase tracking-wider text-amber-300 mb-2">
-                        Un petit message ou une remarque ? (optionnel)
-                    </label>
-                    <textarea id="guestNotes" rows="2" placeholder="Régime alimentaire, préférence de bière, vanne... (transmis en privé)" class="w-full bg-black/60 border border-stone-700 rounded-xl px-4 py-2.5 text-white placeholder-stone-500 focus:outline-none focus:border-amber-400 text-sm resize-none"></textarea>
                 </div>
 
                 <!-- Bouton d'action -->
@@ -359,7 +351,7 @@
                 </div>
             </div>
 
-            <!-- Liste des inscrits (consultation seule) -->
+            <!-- Liste des inscrits -->
             <div id="guestsContainer" class="space-y-3">
                 <div class="text-center py-8 text-stone-500 text-sm italic">
                     Chargement des confirmations...
@@ -447,7 +439,7 @@
                     <span>🗓️</span> Jusqu'à quand puis-je répondre ?
                 </h4>
                 <p class="text-stone-300 text-xs mt-1.5 leading-relaxed">
-                    Idéalement d'ici le <strong>dimanche 8 novembre</strong> au plus tard, histoire que j'appelle Les Brasseurs avec un nombre de convives bien net !
+                    Idéalement d'ici le <strong>samedi 31 octobre</strong> au plus tard, histoire que j'appelle Les Brasseurs avec un nombre de convives bien net !
                 </p>
             </div>
 
@@ -475,7 +467,7 @@
     <script>
         const CONFIG = {
             targetDate: "2026-11-14T13:00:00+01:00",
-            eventName: "Anniversaire 14 Novembre",
+            eventName: "Anniversaire Mehdi | Repas aux Brasseurs & Prolongations",
             supabaseUrl: "https://eibscuxcvsnvhfkvbajp.supabase.co",
             supabaseAnonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpYnNjdXhjdnNudmhma3ZiYWpwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE2MDA5NDgsImV4cCI6MjEwNzE3Njk0OH0.sOiNM9z_M9E4-lCmCJ9b5BKygY9d3M8Jg8zKE3pCuAs"
         };
@@ -660,13 +652,12 @@
             const name = document.getElementById("guestName").value.trim();
             const presenceValue = document.querySelector('input[name="presence"]:checked').value;
             const guestCount = document.getElementById("guestCount").value;
-            const notes = document.getElementById("guestNotes").value.trim();
 
             const entryData = {
                 name: name,
                 presence: presenceValue,
                 guest_count: presenceValue === 'cannot' ? 0 : parseInt(guestCount, 10),
-                notes: notes || null
+                notes: null
             };
 
             // Insertion en base Supabase
@@ -760,13 +751,12 @@
             }, 300);
         };
 
-        // Redirection Google Calendar
+        // Redirection Google Calendar (14 nov 13h00 -> 15 nov 02h00 heure suisse = 12h00 UTC -> 01h00 UTC le lendemain)
         window.addToGoogleCalendar = function() {
-            const title = encodeURIComponent("Anniversaire ! Repas aux Brasseurs & Prolongations");
-            const details = encodeURIComponent("Repas du midi à 13h aux Brasseurs de Lausanne, suivi d'un pousse-café et d'une suite libre en journée/soirée.");
+            const title = encodeURIComponent(CONFIG.eventName);
+            const details = encodeURIComponent("Repas du midi à 13h aux Brasseurs de Lausanne, suivi d'un pousse-café et d'une suite libre en journée et soirée !");
             const location = encodeURIComponent("Les Brasseurs, Rue Centrale 4, 1003 Lausanne");
-            // Horaires en UTC (13h heure de Suisse = 12h UTC en heure d'hiver)
-            const dates = "20261114T120000Z/20261114T230000Z";
+            const dates = "20261114T120000Z/20261115T010000Z";
             
             const googleUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${dates}&details=${details}&location=${location}`;
             window.open(googleUrl, '_blank');
@@ -778,14 +768,14 @@
             const icsData = [
                 "BEGIN:VCALENDAR",
                 "VERSION:2.0",
-                "PRODID:-//Anniversaire//FR",
+                "PRODID:-//Anniversaire Mehdi//FR",
                 "BEGIN:VEVENT",
-                "UID:annif-14nov-2026@lausanne",
+                "UID:annif-mehdi-14nov-2026@lausanne",
                 "DTSTAMP:20261010T120000Z",
                 "DTSTART:20261114T120000Z",
-                "DTEND:20261114T230000Z",
-                "SUMMARY:Anniversaire ! Repas aux Brasseurs & Prolongations",
-                "DESCRIPTION:Repas du midi à 13h aux Brasseurs de Lausanne, suivi d'un pousse-café et d'une suite libre.",
+                "DTEND:20261115T010000Z",
+                `SUMMARY:${CONFIG.eventName}`,
+                "DESCRIPTION:Repas du midi à 13h aux Brasseurs de Lausanne, suivi d'un pousse-café et d'une suite libre en journée et soirée !",
                 "LOCATION:Les Brasseurs, Rue Centrale 4, 1003 Lausanne",
                 "STATUS:CONFIRMED",
                 "END:VEVENT",
@@ -795,7 +785,7 @@
             const blob = new Blob([icsData], { type: 'text/calendar;charset=utf-8' });
             const link = document.createElement('a');
             link.href = window.URL.createObjectURL(blob);
-            link.setAttribute('download', 'anniversaire-14-novembre.ics');
+            link.setAttribute('download', 'anniversaire-mehdi-14-novembre.ics');
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
