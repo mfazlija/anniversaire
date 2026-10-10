@@ -44,6 +44,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;1,600&display=swap" rel="stylesheet">
     <!-- Canvas Confetti -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <!-- Supabase Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <style>
         .font-serif-title {
@@ -452,51 +454,23 @@
         </p>
     </footer>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, collection, addDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
+    <script>
         const CONFIG = {
             targetDate: "2026-11-14T13:00:00",
-            hostPhone: "41787118394",
-            eventName: "Anniversaire 14 Novembre"
+            hostPhone: "41787118394", // Ton numéro sans le '+' (ex: 41791234567 ou 33612345678)
+            eventName: "Anniversaire 14 Novembre",
+            // 🔑 Remplace par tes clés Supabase (voir DEPLOIEMENT.md)
+            supabaseUrl: "https://eibscuxcvsnvhfkvbajp.supabase.co/rest/v1/",
+            supabaseAnonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpYnNjdXhjdnNudmhma3ZiYWpwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE2MDA5NDgsImV4cCI6MjEwNzE3Njk0OH0.sOiNM9z_M9E4-lCmCJ9b5BKygY9d3M8Jg8zKE3pCuAs"
         };
 
-        // Configuration Cloud Storage
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'anniv-14nov-lausanne';
-        let db = null;
-        let auth = null;
-        let currentUser = null;
-
-        if (typeof __firebase_config !== 'undefined') {
-            try {
-                const firebaseConfig = JSON.parse(__firebase_config);
-                const app = initializeApp(firebaseConfig);
-                auth = getAuth(app);
-                db = getFirestore(app);
-
-                // Authentification sécurisée obligatoire avant requêtes
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
-                currentUser = auth.currentUser;
-                
-                // Écoute temps-réel de la liste des invités
-                initRealtimeGuestsListener();
-            } catch (err) {
-                console.error("Erreur initialisation cloud:", err);
-            }
-        } else {
-            // Affichage fallback si exécuté hors environnement cloud
-            renderLocalFallbackList();
-        }
+        const isConfigured = CONFIG.supabaseUrl && !CONFIG.supabaseUrl.includes('TON_PROJET');
+        const supabase = isConfigured && window.supabase 
+            ? window.supabase.createClient(CONFIG.supabaseUrl, CONFIG.supabaseAnonKey)
+            : null;
 
         let currentFormattedMessage = "";
 
-        // 1. Décompte dynamique
         function updateCountdown() {
             const now = new Date().getTime();
             const eventTime = new Date(CONFIG.targetDate).getTime();
@@ -523,7 +497,6 @@
         setInterval(updateCountdown, 1000);
         updateCountdown();
 
-        // 2. Interaction formulaire accompagnants
         document.querySelectorAll('input[name="presence"]').forEach(elem => {
             elem.addEventListener('change', function() {
                 const plusOneBox = document.getElementById('plusOneContainer');
@@ -535,33 +508,57 @@
             });
         });
 
-        // 3. Écouteur en direct sur la collection Firestore
-        function initRealtimeGuestsListener() {
-            if (!db) return;
-            const rsvpsRef = collection(db, 'artifacts', appId, 'public', 'data', 'rsvps');
+        async function fetchGuests() {
+            if (!supabase) {
+                renderUnconfiguredNotice();
+                return;
+            }
 
-            onSnapshot(rsvpsRef, (snapshot) => {
-                const guests = [];
-                snapshot.forEach(docSnap => {
-                    guests.push({ id: docSnap.id, ...docSnap.data() });
-                });
+            try {
+                const { data, error } = await supabase
+                    .from('rsvps')
+                    .select('*')
+                    .order('created_at', { ascending: false });
 
-                // Tri en mémoire par date décroissante
-                guests.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-                renderGuestsList(guests);
-            }, (error) => {
-                console.error("Erreur lecture RSVP:", error);
-                const container = document.getElementById("guestsContainer");
-                if (container) {
-                    container.innerHTML = `<div class="text-center text-red-400 text-xs py-4">Erreur lors de la synchronisation des invités.</div>`;
+                if (error) {
+                    console.error("Erreur lecture Supabase:", error);
+                    return;
                 }
-            });
+                renderGuestsList(data || []);
+            } catch (err) {
+                console.error("Erreur réseau Supabase:", err);
+            }
         }
 
-        function renderLocalFallbackList() {
+        function initRealtimeGuestsListener() {
+            if (!supabase) {
+                renderUnconfiguredNotice();
+                return;
+            }
+
+            fetchGuests();
+
+            try {
+                supabase
+                    .channel('public:rsvps')
+                    .on('postgres_changes', { event: '*', schema: 'public', table: 'rsvps' }, () => {
+                        fetchGuests();
+                    })
+                    .subscribe();
+            } catch (e) {
+                console.warn("Écouteur realtime non supporté ou désactivé:", e);
+            }
+        }
+
+        function renderUnconfiguredNotice() {
             const container = document.getElementById("guestsContainer");
             if (container) {
-                container.innerHTML = `<div class="text-center text-stone-400 text-xs py-4">Aucune inscription pour l'instant. Remplis le formulaire ci-dessus pour t'inscrire !</div>`;
+                container.innerHTML = `
+                    <div class="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-center text-xs text-amber-200">
+                        ⚡ <strong>Supabase en attente de configuration :</strong><br>
+                        Colle ton <code>supabaseUrl</code> et <code>supabaseAnonKey</code> dans le script pour activer la synchronisation en direct !
+                    </div>
+                `;
             }
         }
 
@@ -576,7 +573,7 @@
             let cannotSeats = 0;
 
             guests.forEach(g => {
-                const count = parseInt(g.guestCount, 10) || 1;
+                const count = parseInt(g.guest_count, 10) || 1;
                 if (g.presence === 'lunch') lunchSeats += count;
                 else if (g.presence === 'later') laterSeats += count;
                 else cannotSeats += 1;
@@ -591,7 +588,7 @@
             if (guests.length === 0) {
                 container.innerHTML = `
                     <div class="text-center py-8 text-stone-400 text-sm bg-black/20 rounded-xl border border-stone-800">
-                        Soyez le premier ou la première à confirmer sa place ! 🥂
+                        Sois le premier ou la première à confirmer sa place ! 🥂
                     </div>
                 `;
                 return;
@@ -600,7 +597,7 @@
             container.innerHTML = guests.map(guest => {
                 let badge = '';
                 let borderClass = 'border-stone-800';
-                const count = parseInt(guest.guestCount, 10) || 1;
+                const count = parseInt(guest.guest_count, 10) || 1;
                 const persText = count > 1 ? `(${count} personnes)` : `(1 personne)`;
 
                 if (guest.presence === 'lunch') {
@@ -614,8 +611,6 @@
                     badge = `<span class="bg-stone-800 text-stone-400 border border-stone-700 text-[11px] font-medium px-2.5 py-0.5 rounded-full">😢 Ne peut pas venir</span>`;
                 }
 
-                const canDelete = currentUser && (guest.userId === currentUser.uid || guest.userId === 'anonymous');
-
                 return `
                     <div class="glass-card rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border ${borderClass}">
                         <div class="flex-1">
@@ -625,12 +620,10 @@
                             </div>
                             ${guest.notes ? `<p class="text-stone-300 text-xs mt-1.5 italic bg-black/30 p-2 rounded-lg border border-stone-800/80">« ${escapeHtml(guest.notes)} »</p>` : ''}
                         </div>
-                        ${canDelete ? `
-                            <button onclick="window.deleteRsvpEntry('${guest.id}')" title="Supprimer mon inscription" class="text-stone-500 hover:text-red-400 transition-colors p-1.5 self-end sm:self-center text-xs flex items-center gap-1">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                                <span>Retirer</span>
-                            </button>
-                        ` : ''}
+                        <button onclick="window.deleteRsvpEntry('${guest.id}')" title="Retirer cette entrée" class="text-stone-500 hover:text-red-400 transition-colors p-1.5 self-end sm:self-center text-xs flex items-center gap-1">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                            <span>Retirer</span>
+                        </button>
                     </div>
                 `;
             }).join('');
@@ -643,7 +636,6 @@
             });
         }
 
-        // 4. Soumission et enregistrement direct dans la base
         window.handleRsvpSubmit = async function(event) {
             event.preventDefault();
             const submitBtn = document.getElementById("submitBtn");
@@ -659,30 +651,32 @@
             const entryData = {
                 name,
                 presence: presenceValue,
-                guestCount: presenceValue === 'cannot' ? 0 : parseInt(guestCount, 10),
-                notes,
-                userId: currentUser ? currentUser.uid : 'anonymous',
-                createdAt: Date.now()
+                guest_count: presenceValue === 'cannot' ? 0 : parseInt(guestCount, 10),
+                notes: notes || null
             };
 
-            // Enregistrement Firestore
-            if (db && currentUser) {
+            if (supabase) {
                 try {
-                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'rsvps'), entryData);
+                    const { error } = await supabase.from('rsvps').insert([entryData]);
+                    if (error) {
+                        console.error("Erreur enregistrement Supabase:", error);
+                    } else {
+                        fetchGuests();
+                    }
                 } catch (e) {
-                    console.error("Erreur enregistrement Firestore:", e);
+                    console.error("Erreur soumission:", e);
                 }
             }
 
             submitBtn.disabled = false;
             submitBtn.innerHTML = originalBtnHtml;
 
-            // Préparation du message SMS / WhatsApp
+            // Préparation du message d'envoi de secours WhatsApp & SMS
             let presenceText = "";
             if (presenceValue === "lunch") {
                 presenceText = `🍽️ Oui, présent pour le repas à 13h aux Brasseurs (${guestCount} pers.) et pour la suite !`;
             } else if (presenceValue === "later") {
-                presenceText = `🍻 Pas dispo à 13h pour manger, mais je vous rejoins l'après-midi / en soirée (${guestCount} pers.) !`;
+                presenceText = `🍻 Pas dispo à 13h pour manger, mais je vous rejoins plus tard (${guestCount} pers.) !`;
             } else {
                 presenceText = `😢 Malheureusement pas disponible pour ton anniversaire.`;
             }
@@ -694,7 +688,7 @@
 
             currentFormattedMessage = message;
 
-            // Mise à jour de la modale
+            // Mise à jour de la modal
             document.getElementById("modalName").innerText = name;
             document.getElementById("previewText").innerText = message;
 
@@ -702,7 +696,7 @@
             document.getElementById("whatsappBtn").href = `https://wa.me/${CONFIG.hostPhone}?text=${encodedMsg}`;
             document.getElementById("smsBtn").href = `sms:${CONFIG.hostPhone}?&body=${encodedMsg}`;
 
-            // Confettis de fête
+            // Explosion de confettis
             if (typeof confetti === 'function') {
                 confetti({
                     particleCount: 100,
@@ -719,17 +713,17 @@
                 modal.classList.remove("opacity-0");
                 modalBox.classList.remove("scale-95");
             }, 10);
-
-            // Scroll fluide vers la liste des inscrits
-            setTimeout(() => {
-                document.getElementById("guest-list")?.scrollIntoView({ behavior: 'smooth' });
-            }, 600);
         };
 
         window.deleteRsvpEntry = async function(id) {
-            if (!db || !id) return;
+            if (!supabase || !id) return;
             try {
-                await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'rsvps', id));
+                const { error } = await supabase.from('rsvps').delete().eq('id', id);
+                if (error) {
+                    console.error("Erreur suppression:", error);
+                } else {
+                    fetchGuests();
+                }
             } catch (err) {
                 console.error("Erreur lors de la suppression:", err);
             }
@@ -777,7 +771,7 @@
                 "DTSTART:20261114T120000Z",
                 "DTEND:20261114T230000Z",
                 "SUMMARY:Anniversaire ! Repas aux Brasseurs & Prolongations",
-                "DESCRIPTION:Repas du midi à 13h aux Brasseurs de Lausanne, suivi d'un pousse-café et d'une suite freestyle.",
+                "DESCRIPTION:Repas du midi à 13h aux Brasseurs de Lausanne, suivi d'un pousse-café et d'une suite libre.",
                 "LOCATION:Les Brasseurs, Rue Centrale 4, 1003 Lausanne",
                 "STATUS:CONFIRMED",
                 "END:VEVENT",
@@ -792,6 +786,8 @@
             link.click();
             document.body.removeChild(link);
         };
+
+        initRealtimeGuestsListener();
     </script>
 </body>
 </html>
