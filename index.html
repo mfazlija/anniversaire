@@ -37,15 +37,15 @@
                 }
             }
         }
-    </script>
+    </>
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;1,600&display=swap" rel="stylesheet">
     <!-- Canvas Confetti -->
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    < src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></>
     <!-- Supabase Client -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    < src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></>
 
     <style>
         .font-serif-title {
@@ -336,7 +336,7 @@
                 </button>
 
                 <p class="text-center text-xs text-stone-400 mt-3">
-                    Ton inscription sera enregistrée et apparaîtra dans la liste des invités ci-dessous !
+                    Ton inion sera enregistrée et apparaîtra dans la liste des invités ci-dessous !
                 </p>
             </form>
         </div>
@@ -456,27 +456,35 @@
 
     <script>
         const CONFIG = {
-            targetDate: "2026-11-14T13:00:00",
-            hostPhone: "41787118394", // Ton numéro sans le '+' (ex: 41791234567 ou 33612345678)
+            // Format universel pour éviter tout bug Safari / Mobile
+            targetDate: "2026-11-14T13:00:00+01:00",
+            hostPhone: "41787118394",
             eventName: "Anniversaire 14 Novembre",
-            // 🔑 Remplace par tes clés Supabase (voir DEPLOIEMENT.md)
             supabaseUrl: "https://eibscuxcvsnvhfkvbajp.supabase.co",
             supabaseAnonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpYnNjdXhjdnNudmhma3ZiYWpwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE2MDA5NDgsImV4cCI6MjEwNzE3Njk0OH0.sOiNM9z_M9E4-lCmCJ9b5BKygY9d3M8Jg8zKE3pCuAs"
         };
 
-        const isConfigured = CONFIG.supabaseUrl && !CONFIG.supabaseUrl.includes('TON_PROJET');
-        const supabase = isConfigured && window.supabase 
-            ? window.supabase.createClient(CONFIG.supabaseUrl, CONFIG.supabaseAnonKey)
-            : null;
+        // Initialisation du client Supabase
+        let supabase = null;
+        try {
+            if (window.supabase && CONFIG.supabaseUrl) {
+                supabase = window.supabase.createClient(CONFIG.supabaseUrl, CONFIG.supabaseAnonKey);
+            }
+        } catch (e) {
+            console.error("Erreur d'initialisation Supabase:", e);
+        }
 
         let currentFormattedMessage = "";
 
+        // Compte à rebours
         function updateCountdown() {
             const now = new Date().getTime();
-            const eventTime = new Date(CONFIG.targetDate).getTime();
-            let distance = eventTime - now;
+            const target = new Date(CONFIG.targetDate).getTime();
+            let distance = target - now;
 
-            if (distance < 0) distance = 0;
+            if (isNaN(distance) || distance <= 0) {
+                distance = 0;
+            }
 
             const days = Math.floor(distance / (1000 * 60 * 60 * 24));
             const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
@@ -497,6 +505,7 @@
         setInterval(updateCountdown, 1000);
         updateCountdown();
 
+        // Gestion du champ d'accompagnants
         document.querySelectorAll('input[name="presence"]').forEach(elem => {
             elem.addEventListener('change', function() {
                 const plusOneBox = document.getElementById('plusOneContainer');
@@ -508,6 +517,7 @@
             });
         });
 
+        // Lecture des invités
         async function fetchGuests() {
             if (!supabase) {
                 renderUnconfiguredNotice();
@@ -522,6 +532,10 @@
 
                 if (error) {
                     console.error("Erreur lecture Supabase:", error);
+                    const container = document.getElementById("guestsContainer");
+                    if (container) {
+                        container.innerHTML = `<div class="p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-center text-xs text-red-300">Impossible de charger la liste (erreur RLS ou table inexistante).</div>`;
+                    }
                     return;
                 }
                 renderGuestsList(data || []);
@@ -531,11 +545,7 @@
         }
 
         function initRealtimeGuestsListener() {
-            if (!supabase) {
-                renderUnconfiguredNotice();
-                return;
-            }
-
+            if (!supabase) return;
             fetchGuests();
 
             try {
@@ -546,7 +556,7 @@
                     })
                     .subscribe();
             } catch (e) {
-                console.warn("Écouteur realtime non supporté ou désactivé:", e);
+                console.warn("Écouteur realtime désactivé:", e);
             }
         }
 
@@ -555,8 +565,7 @@
             if (container) {
                 container.innerHTML = `
                     <div class="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-center text-xs text-amber-200">
-                        ⚡ <strong>Supabase en attente de configuration :</strong><br>
-                        Colle ton <code>supabaseUrl</code> et <code>supabaseAnonKey</code> dans le script pour activer la synchronisation en direct !
+                        ⚡ Initialisation de la synchronisation en cours...
                     </div>
                 `;
             }
@@ -636,12 +645,14 @@
             });
         }
 
+        // Soumission du formulaire
         window.handleRsvpSubmit = async function(event) {
             event.preventDefault();
             const submitBtn = document.getElementById("submitBtn");
             const originalBtnHtml = submitBtn.innerHTML;
+            
             submitBtn.disabled = true;
-            submitBtn.innerHTML = `<span>Enregistrement en cours...</span>`;
+            submitBtn.innerHTML = `<span>Validation en cours...</span>`;
 
             const name = document.getElementById("guestName").value.trim();
             const presenceValue = document.querySelector('input[name="presence"]:checked').value;
@@ -649,19 +660,21 @@
             const notes = document.getElementById("guestNotes").value.trim();
 
             const entryData = {
-                name,
+                name: name,
                 presence: presenceValue,
                 guest_count: presenceValue === 'cannot' ? 0 : parseInt(guestCount, 10),
                 notes: notes || null
             };
 
+            // Sauvegarde Supabase
             if (supabase) {
                 try {
                     const { error } = await supabase.from('rsvps').insert([entryData]);
                     if (error) {
                         console.error("Erreur enregistrement Supabase:", error);
+                        alert("Note: L'inscription n'a pas pu être synchronisée sur Supabase (" + error.message + "). Tu peux tout de même m'envoyer la confirmation via WhatsApp !");
                     } else {
-                        fetchGuests();
+                        await fetchGuests();
                     }
                 } catch (e) {
                     console.error("Erreur soumission:", e);
@@ -671,7 +684,7 @@
             submitBtn.disabled = false;
             submitBtn.innerHTML = originalBtnHtml;
 
-            // Préparation du message d'envoi de secours WhatsApp & SMS
+            // Message WhatsApp / SMS
             let presenceText = "";
             if (presenceValue === "lunch") {
                 presenceText = `🍽️ Oui, présent pour le repas à 13h aux Brasseurs (${guestCount} pers.) et pour la suite !`;
@@ -688,7 +701,7 @@
 
             currentFormattedMessage = message;
 
-            // Mise à jour de la modal
+            // Modale
             document.getElementById("modalName").innerText = name;
             document.getElementById("previewText").innerText = message;
 
@@ -696,7 +709,7 @@
             document.getElementById("whatsappBtn").href = `https://wa.me/${CONFIG.hostPhone}?text=${encodedMsg}`;
             document.getElementById("smsBtn").href = `sms:${CONFIG.hostPhone}?&body=${encodedMsg}`;
 
-            // Explosion de confettis
+            // Confettis
             if (typeof confetti === 'function') {
                 confetti({
                     particleCount: 100,
@@ -708,11 +721,13 @@
             // Ouverture de la modale
             const modal = document.getElementById("confirmationModal");
             const modalBox = document.getElementById("modalBox");
-            modal.classList.remove("hidden");
-            setTimeout(() => {
-                modal.classList.remove("opacity-0");
-                modalBox.classList.remove("scale-95");
-            }, 10);
+            if (modal && modalBox) {
+                modal.classList.remove("hidden");
+                setTimeout(() => {
+                    modal.classList.remove("opacity-0");
+                    modalBox.classList.remove("scale-95");
+                }, 10);
+            }
         };
 
         window.deleteRsvpEntry = async function(id) {
@@ -732,8 +747,9 @@
         window.closeModal = function() {
             const modal = document.getElementById("confirmationModal");
             const modalBox = document.getElementById("modalBox");
+            if (!modal) return;
             modal.classList.add("opacity-0");
-            modalBox.classList.add("scale-95");
+            if (modalBox) modalBox.classList.add("scale-95");
             setTimeout(() => {
                 modal.classList.add("hidden");
             }, 300);
@@ -741,12 +757,7 @@
 
         window.copyMessageToClipboard = function() {
             if (!currentFormattedMessage) return;
-            const textarea = document.createElement("textarea");
-            textarea.value = currentFormattedMessage;
-            document.body.appendChild(textarea);
-            textarea.select();
-            try {
-                document.execCommand('copy');
+            navigator.clipboard.writeText(currentFormattedMessage).then(() => {
                 const btn = document.getElementById("copyBtn");
                 btn.innerText = "✓ Message copié dans le presse-papier !";
                 btn.classList.add("text-amber-400", "border-amber-400");
@@ -754,10 +765,9 @@
                     btn.innerText = "Copier le texte";
                     btn.classList.remove("text-amber-400", "border-amber-400");
                 }, 2500);
-            } catch (err) {
-                console.error("Échec copie", err);
-            }
-            document.body.removeChild(textarea);
+            }).catch(err => {
+                console.error("Échec copie:", err);
+            });
         };
 
         window.downloadCalendarEvent = function() {
@@ -787,7 +797,10 @@
             document.body.removeChild(link);
         };
 
-        initRealtimeGuestsListener();
+        // Lancement au chargement du DOM
+        window.addEventListener('DOMContentLoaded', () => {
+            initRealtimeGuestsListener();
+        });
     </script>
 </body>
 </html>
