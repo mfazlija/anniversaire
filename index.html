@@ -37,15 +37,15 @@
                 }
             }
         }
-    </>
+    </script>
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;1,600&display=swap" rel="stylesheet">
     <!-- Canvas Confetti -->
-    < src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <!-- Supabase Client -->
-    < src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <style>
         .font-serif-title {
@@ -161,9 +161,9 @@
                 <p class="text-stone-400 text-sm sm:text-base mt-2">Chacun son rythme, viens pour un verre ou reste jusqu’à la fermeture !</p>
             </div>
 
-            <!-- Timeline interactive stylisée -->
+            <!-- Timeline -->
             <div class="space-y-4">
-                <!-- Étape 1 : Le Déjeuner (Fixe & Important) -->
+                <!-- Étape 1 : Le Déjeuner -->
                 <div class="glass-card glass-card-hover rounded-2xl p-5 sm:p-6 border-l-4 border-l-amber-500 relative">
                     <div class="flex items-start gap-4">
                         <div class="w-12 h-12 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-xl shrink-0">
@@ -336,7 +336,7 @@
                 </button>
 
                 <p class="text-center text-xs text-stone-400 mt-3">
-                    Ton inion sera enregistrée et apparaîtra dans la liste des invités ci-dessous !
+                    Ton inscription sera enregistrée et apparaîtra dans la liste des invités ci-dessous !
                 </p>
             </form>
         </div>
@@ -385,7 +385,7 @@
             
             <h3 class="text-xl font-bold text-white mb-2">Merci beaucoup <span id="modalName"></span> !</h3>
             <p class="text-stone-300 text-sm mb-5 leading-relaxed">
-                Ta réponse a bien été enregistrée localement. Pour être 100% sûr que je réserve ta place, transmets-la moi directement :
+                Ta réponse a bien été enregistrée. Pour être 100% sûr que je réserve ta place, transmets-la moi directement :
             </p>
 
             <!-- Aperçu du message formaté -->
@@ -456,7 +456,6 @@
 
     <script>
         const CONFIG = {
-            // Format universel pour éviter tout bug Safari / Mobile
             targetDate: "2026-11-14T13:00:00+01:00",
             hostPhone: "41787118394",
             eventName: "Anniversaire 14 Novembre",
@@ -464,14 +463,14 @@
             supabaseAnonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpYnNjdXhjdnNudmhma3ZiYWpwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE2MDA5NDgsImV4cCI6MjEwNzE3Njk0OH0.sOiNM9z_M9E4-lCmCJ9b5BKygY9d3M8Jg8zKE3pCuAs"
         };
 
-        // Initialisation du client Supabase
-        let supabase = null;
+        // Client Supabase
+        let supabaseClient = null;
         try {
             if (window.supabase && CONFIG.supabaseUrl) {
-                supabase = window.supabase.createClient(CONFIG.supabaseUrl, CONFIG.supabaseAnonKey);
+                supabaseClient = window.supabase.createClient(CONFIG.supabaseUrl, CONFIG.supabaseAnonKey);
             }
         } catch (e) {
-            console.error("Erreur d'initialisation Supabase:", e);
+            console.error("Erreur init Supabase:", e);
         }
 
         let currentFormattedMessage = "";
@@ -505,7 +504,7 @@
         setInterval(updateCountdown, 1000);
         updateCountdown();
 
-        // Gestion du champ d'accompagnants
+        // Sélecteur d'accompagnants
         document.querySelectorAll('input[name="presence"]').forEach(elem => {
             elem.addEventListener('change', function() {
                 const plusOneBox = document.getElementById('plusOneContainer');
@@ -517,25 +516,21 @@
             });
         });
 
-        // Lecture des invités
+        // Lecture Supabase
         async function fetchGuests() {
-            if (!supabase) {
+            if (!supabaseClient) {
                 renderUnconfiguredNotice();
                 return;
             }
 
             try {
-                const { data, error } = await supabase
+                const { data, error } = await supabaseClient
                     .from('rsvps')
                     .select('*')
                     .order('created_at', { ascending: false });
 
                 if (error) {
                     console.error("Erreur lecture Supabase:", error);
-                    const container = document.getElementById("guestsContainer");
-                    if (container) {
-                        container.innerHTML = `<div class="p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-center text-xs text-red-300">Impossible de charger la liste (erreur RLS ou table inexistante).</div>`;
-                    }
                     return;
                 }
                 renderGuestsList(data || []);
@@ -545,11 +540,11 @@
         }
 
         function initRealtimeGuestsListener() {
-            if (!supabase) return;
+            if (!supabaseClient) return;
             fetchGuests();
 
             try {
-                supabase
+                supabaseClient
                     .channel('public:rsvps')
                     .on('postgres_changes', { event: '*', schema: 'public', table: 'rsvps' }, () => {
                         fetchGuests();
@@ -565,7 +560,7 @@
             if (container) {
                 container.innerHTML = `
                     <div class="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-center text-xs text-amber-200">
-                        ⚡ Initialisation de la synchronisation en cours...
+                        ⚡ Initialisation de la base de données...
                     </div>
                 `;
             }
@@ -645,7 +640,7 @@
             });
         }
 
-        // Soumission du formulaire
+        // Envoi du formulaire
         window.handleRsvpSubmit = async function(event) {
             event.preventDefault();
             const submitBtn = document.getElementById("submitBtn");
@@ -666,25 +661,25 @@
                 notes: notes || null
             };
 
-            // Sauvegarde Supabase
-            if (supabase) {
+            // Insertion en base Supabase
+            if (supabaseClient) {
                 try {
-                    const { error } = await supabase.from('rsvps').insert([entryData]);
+                    const { error } = await supabaseClient.from('rsvps').insert([entryData]);
                     if (error) {
                         console.error("Erreur enregistrement Supabase:", error);
-                        alert("Note: L'inscription n'a pas pu être synchronisée sur Supabase (" + error.message + "). Tu peux tout de même m'envoyer la confirmation via WhatsApp !");
+                        alert("Erreur Supabase: " + error.message);
                     } else {
                         await fetchGuests();
                     }
                 } catch (e) {
-                    console.error("Erreur soumission:", e);
+                    console.error("Erreur réseau:", e);
                 }
             }
 
             submitBtn.disabled = false;
             submitBtn.innerHTML = originalBtnHtml;
 
-            // Message WhatsApp / SMS
+            // Préparation des messages de secours
             let presenceText = "";
             if (presenceValue === "lunch") {
                 presenceText = `🍽️ Oui, présent pour le repas à 13h aux Brasseurs (${guestCount} pers.) et pour la suite !`;
@@ -731,16 +726,16 @@
         };
 
         window.deleteRsvpEntry = async function(id) {
-            if (!supabase || !id) return;
+            if (!supabaseClient || !id) return;
             try {
-                const { error } = await supabase.from('rsvps').delete().eq('id', id);
+                const { error } = await supabaseClient.from('rsvps').delete().eq('id', id);
                 if (error) {
                     console.error("Erreur suppression:", error);
                 } else {
                     fetchGuests();
                 }
             } catch (err) {
-                console.error("Erreur lors de la suppression:", err);
+                console.error("Erreur suppression:", err);
             }
         };
 
@@ -797,7 +792,7 @@
             document.body.removeChild(link);
         };
 
-        // Lancement au chargement du DOM
+        // Lancement
         window.addEventListener('DOMContentLoaded', () => {
             initRealtimeGuestsListener();
         });
